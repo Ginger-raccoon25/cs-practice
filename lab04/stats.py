@@ -1,21 +1,21 @@
 def parse_record(line: str) -> dict:
     """Строка «город;температура;дата» -> словарь. Негодная строка -> ValueError."""
-    parts = line.split(";")
+    parts = [part.strip() for part in line.split(";")]
     if len(parts) != 3:
         raise ValueError(f"ожидались три поля через точку с запятой, получено {len(parts)}")
 
     city, temp, date = parts
-    if not city.strip():
+    if not city:
         raise ValueError("пустой город")
-    if not date.strip():
+    if not date:
         raise ValueError("пустая дата")
 
     try:
-        temperature = float(temp)
+        temperature = float(temp.replace(",", "."))
     except ValueError:
         raise ValueError(f"температура не число: {temp!r}")
 
-    return {"city": city.strip(), "temp": temperature, "date": date.strip()}
+    return {"city": city, "temperature": temperature, "date": date}
 
 
 def read_valid(lines) -> list:
@@ -37,7 +37,7 @@ def average_by_city(records: list) -> dict:
     count = {}
     for record in records:
         city = record["city"]
-        total[city] = total.get(city, 0.0) + record["temp"]
+        total[city] = total.get(city, 0.0) + record["temperature"]
         count[city] = count.get(city, 0) + 1
     return {city: round(total[city] / count[city], 1) for city in total}
 
@@ -56,13 +56,17 @@ if __name__ == "__main__":
     # Мини-проверка: файл работает и сам по себе
     sample = [
         "Азов;24.5;2026-07-01",
+        " Азов ; -3,5 ; 2026-01-09 ",
         "мусор",
         "Азов;25.5;2026-07-02",
         "Таганрог;30;2026-07-01",
     ]
     records = read_valid(sample)
     assert parse_record("Азов;24.5;2026-07-01") == {
-        "city": "Азов", "temp": 24.5, "date": "2026-07-01",
+        "city": "Азов", "temperature": 24.5, "date": "2026-07-01",
+    }
+    assert parse_record(" Азов ; -3,5 ; 2026-01-09 ") == {
+        "city": "Азов", "temperature": -3.5, "date": "2026-01-09",
     }
     for bad in ("", "мусор", "Азов;н/д;2026-07-01", "А;Б;В;Г", "Азов;;2026-07-01"):
         try:
